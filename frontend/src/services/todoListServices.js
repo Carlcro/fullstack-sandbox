@@ -15,13 +15,13 @@ export const addTodoList = async (title) => {
   return response.json()
 }
 
-export const addTodoItem = async (todoListId, content) => {
+export const addTodoItem = async (todoListId, content, completionDate) => {
   const response = await fetch(`http://localhost:3001/api/todoLists/${todoListId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, completionDate }),
   })
 
   return response.json()

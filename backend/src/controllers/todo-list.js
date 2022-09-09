@@ -67,7 +67,13 @@ exports.createTodoListItem = (req, res) => {
 
   const todoList = todoLists.find((todoList) => todoList.id === Number(req.params.id))
 
-  todoList.todos = [...todoList.todos, { id: todoList.todos.length + 1, content: req.body.content }]
+  const newTodoItem = {
+    id: todoList.todos.length + 1,
+    content: req.body.content,
+    completionDate: req.body.completionDate,
+  }
+
+  todoList.todos = [...todoList.todos, newTodoItem]
 
   res.send(todoLists)
 }

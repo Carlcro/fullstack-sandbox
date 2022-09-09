@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import { TextField, Card, CardContent, CardActions, Button, Typography } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
+import { DesktopDatePicker } from '@mui/x-date-pickers'
+import formatDistanceToNow from 'date-fns/formatDistanceToNow'
+import isPast from 'date-fns/isPast'
+import addDays from 'date-fns/addDays'
 
 export const TodoListForm = ({
   todoList,
@@ -11,12 +15,14 @@ export const TodoListForm = ({
   handleCompleteTodoItem,
 }) => {
   const [newTodoItem, setNewTodoItem] = useState('')
+  const [completionDate, setCompletionDate] = useState(null)
 
   const addTodo = async (e) => {
     e.preventDefault()
     if (newTodoItem.length) {
-      handleAddTodoItem(newTodoItem)
+      handleAddTodoItem(newTodoItem, completionDate)
       setNewTodoItem('')
+      setCompletionDate(null)
     }
   }
 
@@ -38,7 +44,17 @@ export const TodoListForm = ({
                 style={todo.completed ? { textDecoration: 'line-through' } : {}}
               />
               <input onChange={(event) => handleCompleteTodoItem(event, todo.id)} type='checkbox' />
-
+              <Typography
+                sx={{ margin: '8px' }}
+                variant='h6'
+                style={
+                  isPast(new Date(todo.completionDate))
+                    ? { color: 'red', width: '10rem', textAlign: 'center' }
+                    : { width: '10rem', textAlign: 'center' }
+                }
+              >
+                {todo.completionDate ? formatDistanceToNow(new Date(todo.completionDate)) : ''}
+              </Typography>
               <Button
                 sx={{ margin: '8px' }}
                 size='small'
@@ -49,12 +65,22 @@ export const TodoListForm = ({
               </Button>
             </div>
           ))}
-          <TextField
-            sx={{ flexGrow: 1, marginTop: '1rem' }}
-            label='Add new todo'
-            value={newTodoItem}
-            onChange={(event) => setNewTodoItem(event.target.value)}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', marginTop: '1rem' }}>
+            <TextField
+              sx={{ flexGrow: 1, marginRight: '1rem' }}
+              label='Add new todo'
+              value={newTodoItem}
+              onChange={(event) => setNewTodoItem(event.target.value)}
+            />
+            <DesktopDatePicker
+              label='Select completion date'
+              value={completionDate}
+              onChange={(newValue) => {
+                setCompletionDate(addDays(newValue, 1))
+              }}
+              renderInput={(params) => <TextField {...params} />}
+            />
+          </div>
           <CardActions>
             <Button type='submit' color='primary' onClick={addTodo}>
               Add Todo <AddIcon />

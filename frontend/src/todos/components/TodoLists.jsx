@@ -53,8 +53,8 @@ export const TodoLists = ({ style }) => {
     setTodoLists(newTodoLists)
   }
 
-  const handleAddTodoItem = async (newTodoItem) => {
-    const newTodoLists = await addTodoItem(activeListId, newTodoItem)
+  const handleAddTodoItem = async (newTodoItem, completionDate) => {
+    const newTodoLists = await addTodoItem(activeListId, newTodoItem, completionDate)
     setTodoLists(newTodoLists)
   }
 
