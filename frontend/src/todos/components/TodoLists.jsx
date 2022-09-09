@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect } from 'react'
+import React, { Fragment, useState, useEffect, useMemo } from 'react'
 import {
   Card,
   CardContent,
@@ -7,67 +7,133 @@ import {
   ListItemText,
   ListItemIcon,
   Typography,
+  TextField,
+  CardActions,
+  Button,
 } from '@mui/material'
 import ReceiptIcon from '@mui/icons-material/Receipt'
+import AddIcon from '@mui/icons-material/Add'
 import { TodoListForm } from './TodoListForm'
-
-// Simulate network
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const fetchTodoLists = () => {
-  return sleep(1000).then(() =>
-    Promise.resolve({
-      '0000000001': {
-        id: '0000000001',
-        title: 'First List',
-        todos: ['First todo of first list!'],
-      },
-      '0000000002': {
-        id: '0000000002',
-        title: 'Second List',
-        todos: ['First todo of second list!'],
-      },
-    })
-  )
-}
+import {
+  addTodoItem,
+  addTodoList,
+  deleteTodoItem,
+  getTodoLists,
+  updateTodoItem,
+  updateTodoItemCompleted,
+} from '../../services/todoListServices'
 
 export const TodoLists = ({ style }) => {
-  const [todoLists, setTodoLists] = useState({})
-  const [activeList, setActiveList] = useState()
+  const [loading, setLoading] = useState(true)
+  const [todoLists, setTodoLists] = useState([])
+  const [activeListId, setActiveListId] = useState(null)
+  const [newTodoListName, setNewTodoListName] = useState('')
 
   useEffect(() => {
-    fetchTodoLists().then(setTodoLists)
+    const fetchTodoLists = async () => {
+      const newTodoLists = await getTodoLists()
+      setTodoLists(newTodoLists)
+      setLoading(false)
+    }
+    fetchTodoLists()
   }, [])
 
-  if (!Object.keys(todoLists).length) return null
+  const currentActiveList = useMemo(
+    () => todoLists.find((list) => list.id === activeListId),
+    [todoLists, activeListId]
+  )
+
+  const handleOnChangeTodoItem = async (event, todoItemId) => {
+    const newTodoLists = await updateTodoItem(activeListId, todoItemId, event.target.value)
+    setTodoLists(newTodoLists)
+  }
+
+  const handleDeleteTodoItem = async (todoItemId) => {
+    const newTodoLists = await deleteTodoItem(activeListId, todoItemId)
+    setTodoLists(newTodoLists)
+  }
+
+  const handleAddTodoItem = async (newTodoItem) => {
+    const newTodoLists = await addTodoItem(activeListId, newTodoItem)
+    setTodoLists(newTodoLists)
+  }
+
+  const handleAddTodoList = async (e) => {
+    e.preventDefault()
+    if (newTodoListName) {
+      try {
+        const newTodoLists = await addTodoList(newTodoListName)
+        setTodoLists(newTodoLists)
+        setNewTodoListName('')
+      } catch (error) {
+        alert(error.message)
+      }
+    }
+  }
+
+  const handleCompleteTodoItem = async (event, todoItemId) => {
+    const newTodoLists = await updateTodoItemCompleted(
+      activeListId,
+      todoItemId,
+      event.target.checked
+    )
+
+    setTodoLists(newTodoLists)
+  }
+
+  if (loading) {
+    return <div>Loading...</div>
+  }
+
+  if (todoLists.length === 0)
+    return (
+      <Card style={style}>
+        <CardContent>
+          <Typography component='h2'>No Todo</Typography>
+        </CardContent>
+      </Card>
+    )
   return (
     <Fragment>
       <Card style={style}>
         <CardContent>
           <Typography component='h2'>My Todo Lists</Typography>
           <List>
-            {Object.keys(todoLists).map((key) => (
-              <ListItem key={key} button onClick={() => setActiveList(key)}>
+            {todoLists.map((list) => (
+              <ListItem key={list.id} button onClick={() => setActiveListId(list.id)}>
                 <ListItemIcon>
                   <ReceiptIcon />
                 </ListItemIcon>
-                <ListItemText primary={todoLists[key].title} />
+                <ListItemText
+                  style={list.allTodosCompleted ? { textDecoration: 'line-through' } : {}}
+                  primary={list.title}
+                />
               </ListItem>
             ))}
           </List>
         </CardContent>
+        <form>
+          <TextField
+            sx={{ flexGrow: 1, marginTop: '1rem', marginLeft: '1rem' }}
+            label='Title'
+            value={newTodoListName}
+            onChange={(event) => setNewTodoListName(event.target.value)}
+          />
+          <CardActions>
+            <Button type='submit' color='primary' onClick={handleAddTodoList}>
+              Add Todo List <AddIcon />
+            </Button>
+          </CardActions>
+        </form>
       </Card>
-      {todoLists[activeList] && (
+      {activeListId && (
         <TodoListForm
-          key={activeList} // use key to make React recreate component to reset internal state
-          todoList={todoLists[activeList]}
-          saveTodoList={(id, { todos }) => {
-            const listToUpdate = todoLists[id]
-            setTodoLists({
-              ...todoLists,
-              [id]: { ...listToUpdate, todos },
-            })
-          }}
+          key={currentActiveList.id}
+          todoList={currentActiveList}
+          handleOnChangeTodoItem={handleOnChangeTodoItem}
+          handleDeleteTodoItem={handleDeleteTodoItem}
+          handleAddTodoItem={handleAddTodoItem}
+          handleCompleteTodoItem={handleCompleteTodoItem}
         />
       )}
     </Fragment>

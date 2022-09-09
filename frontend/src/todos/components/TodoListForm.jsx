@@ -3,23 +3,29 @@ import { TextField, Card, CardContent, CardActions, Button, Typography } from '@
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 
-export const TodoListForm = ({ todoList, saveTodoList }) => {
-  const [todos, setTodos] = useState(todoList.todos)
+export const TodoListForm = ({
+  todoList,
+  handleOnChangeTodoItem,
+  handleDeleteTodoItem,
+  handleAddTodoItem,
+  handleCompleteTodoItem,
+}) => {
+  const [newTodoItem, setNewTodoItem] = useState('')
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    saveTodoList(todoList.id, { todos })
+  const addTodo = async (e) => {
+    e.preventDefault()
+    if (newTodoItem.length) {
+      handleAddTodoItem(newTodoItem)
+      setNewTodoItem('')
+    }
   }
 
   return (
     <Card sx={{ margin: '0 1rem' }}>
       <CardContent>
         <Typography component='h2'>{todoList.title}</Typography>
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}
-        >
-          {todos.map((name, index) => (
+        <form style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+          {todoList.todos.map((todo, index) => (
             <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
               <Typography sx={{ margin: '8px' }} variant='h6'>
                 {index + 1}
@@ -27,44 +33,31 @@ export const TodoListForm = ({ todoList, saveTodoList }) => {
               <TextField
                 sx={{ flexGrow: 1, marginTop: '1rem' }}
                 label='What to do?'
-                value={name}
-                onChange={(event) => {
-                  setTodos([
-                    // immutable update
-                    ...todos.slice(0, index),
-                    event.target.value,
-                    ...todos.slice(index + 1),
-                  ])
-                }}
+                value={todo.content}
+                onChange={(event) => handleOnChangeTodoItem(event, todo.id)}
+                style={todo.completed ? { textDecoration: 'line-through' } : {}}
               />
+              <input onChange={(event) => handleCompleteTodoItem(event, todo.id)} type='checkbox' />
+
               <Button
                 sx={{ margin: '8px' }}
                 size='small'
                 color='secondary'
-                onClick={() => {
-                  setTodos([
-                    // immutable delete
-                    ...todos.slice(0, index),
-                    ...todos.slice(index + 1),
-                  ])
-                }}
+                onClick={() => handleDeleteTodoItem(todo.id)}
               >
                 <DeleteIcon />
               </Button>
             </div>
           ))}
+          <TextField
+            sx={{ flexGrow: 1, marginTop: '1rem' }}
+            label='Add new todo'
+            value={newTodoItem}
+            onChange={(event) => setNewTodoItem(event.target.value)}
+          />
           <CardActions>
-            <Button
-              type='button'
-              color='primary'
-              onClick={() => {
-                setTodos([...todos, ''])
-              }}
-            >
+            <Button type='submit' color='primary' onClick={addTodo}>
               Add Todo <AddIcon />
-            </Button>
-            <Button type='submit' variant='contained' color='primary'>
-              Save
             </Button>
           </CardActions>
         </form>
